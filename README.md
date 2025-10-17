@@ -30,12 +30,12 @@ Clone the Repository (If applicable):
 
 # Assuming you are in the root directory where the files are located
 
-
 Run the Server:
 The application entry point is located at cmd/server/main.go.
 
+```
 go run cmd/server/main.go
-
+```
 
 The API will start on port 8080.
 
@@ -49,7 +49,7 @@ The single public endpoint for all conversions is: http://localhost:8080/api/v1/
 1. GET Request (Query Parameters)
 
 Format: Use URL query parameters to specify the value and units.
-
+```
  ------------- --------------- ------------------- ---------------
 | Parameter   | Required      | Description       | Example Value |
 | value       | Yes           | The numeric value | 32            |
@@ -61,14 +61,13 @@ Format: Use URL query parameters to specify the value and units.
 | to          | Yes           | The unit to       | celsius       |
 |             |               | convert to.       |               |
  ------------- --------------- ------------------- ---------------
-
+```
 Example: Convert 10 miles to kilometers.
-
+```
 GET /api/v1/convert?value=10&from=mile&to=km
-
-
+```
 Successful Response (200 OK):
-
+```
 {
   "originalValue": 10,
   "fromUnit": "mile",
@@ -76,14 +75,14 @@ Successful Response (200 OK):
   "toUnit": "km",
   "conversionType": "Length"
 }
-
+```
 
 2. POST Request (JSON Body)
 
 Format: Send a JSON object in the request body.
 
 Example: Convert 15 pounds to kilograms.
-
+```
 POST /api/v1/convert
 Content-Type: application/json
 
@@ -92,10 +91,10 @@ Content-Type: application/json
   "unitFrom": "pound",
   "unitTo": "kg"
 }
-
+```
 
 Successful Response (200 OK):
-
+```
 {
   "originalValue": 15,
   "fromUnit": "pound",
@@ -103,28 +102,28 @@ Successful Response (200 OK):
   "toUnit": "kg",
   "conversionType": "Weight"
 }
-
+```
 
 ## Error Handling
 
 The API returns a 400 Bad Request with a descriptive message if the input is invalid.
 
 Example Error (Invalid Unit):
-
+```
 GET /api/v1/convert?value=10&from=mile&to=furlong
-
+```
 
 Error Response (400 Bad Request):
-
+```
 {
   "error": "invalid length unit 'mile' or 'furlong'"
 }
-
+```
 
 ## Project Structure
 
 The project follows a standard Go layout to separate concerns:
-
+```
 unit-converter/
 ├── cmd/
 │   └── server/
@@ -136,7 +135,7 @@ unit-converter/
 │   │   └── handler.go    # HTTP layer: request parsing, error/JSON response generation.
 │   └── model/
 │       └── types.go      # Data models: structs for API requests and responses.
-
+```
 
 ## Acknowledgement
 https://roadmap.sh/projects/unit-converter
