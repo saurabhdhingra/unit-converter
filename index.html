@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Unit Converter (Go Backend)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Converter Card -->
+    <div class="w-full max-w-2xl bg-white shadow-2xl rounded-xl p-6 md:p-10 border border-gray-100">
+
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">
+            Universal Unit Converter (Go Backend)
+        </h1>
+
+        <!-- Tab Navigation -->
+        <div class="flex justify-center mb-8 border-b border-gray-200">
+            <button id="tab-length" data-unit-type="length"
+                class="tab-button py-3 px-6 text-sm font-medium border-b-2 border-indigo-500 text-indigo-600 transition duration-150 ease-in-out hover:bg-indigo-50">
+                Length
+            </button>
+            <button id="tab-weight" data-unit-type="weight"
+                class="tab-button py-3 px-6 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 transition duration-150 ease-in-out">
+                Weight
+            </button>
+            <button id="tab-temp" data-unit-type="temperature"
+                class="tab-button py-3 px-6 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 transition duration-150 ease-in-out">
+                Temperature
+            </button>
+        </div>
+
+        <!-- Conversion Form -->
+        <div id="conversion-form" class="space-y-6">
+
+            <!-- Input Value -->
+            <div>
+                <label for="inputValue" class="block text-sm font-medium text-gray-700 mb-2">Value to Convert</label>
+                <input type="number" id="inputValue" value="1" min="0" step="any"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg shadow-sm"
+                    placeholder="Enter value" oninput="calculateConversion()">
+            </div>
+
+            <!-- Unit Selection -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Convert FROM Unit -->
+                <div>
+                    <label for="unitFrom" class="block text-sm font-medium text-gray-700 mb-2">Convert From</label>
+                    <select id="unitFrom" onchange="calculateConversion()"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg shadow-sm bg-white">
+                        <!-- Options populated by JavaScript -->
+                    </select>
+                </div>
+
+                <!-- Convert TO Unit -->
+                <div>
+                    <label for="unitTo" class="block text-sm font-medium text-gray-700 mb-2">Convert To</label>
+                    <select id="unitTo" onchange="calculateConversion()"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg shadow-sm bg-white">
+                        <!-- Options populated by JavaScript -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Result Display -->
+            <div class="pt-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">Converted Value</h2>
+                <div id="resultOutput"
+                    class="p-4 bg-indigo-50 border-2 border-indigo-200 rounded-lg text-2xl font-bold text-indigo-700 text-center shadow-md">
+                    0
+                </div>
+                <p class="text-sm text-gray-500 mt-2 text-center">Result fetched from Go backend at :8080</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for Logic -->
+    <script>
+        const conversionData = {
+            length: {
+                mm: { name: "Millimeter" }, cm: { name: "Centimeter" }, m: { name: "Meter" },
+                km: { name: "Kilometer" }, in: { name: "Inch" }, ft: { name: "Foot" },
+                yd: { name: "Yard" }, mi: { name: "Mile" }
+            },
+            weight: {
+                mg: { name: "Milligram" }, g: { name: "Gram" }, kg: { name: "Kilogram" },
+                oz: { name: "Ounce" }, lb: { name: "Pound" }
+            },
+            temperature: {
+                c: { name: "Celsius" }, f: { name: "Fahrenheit" }, k: { name: "Kelvin" }
+            }
+        };
+
+        // --- DOM Elements ---
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const unitFromSelect = document.getElementById('unitFrom');
+        const unitToSelect = document.getElementById('unitTo');
+        const inputValue = document.getElementById('inputValue');
+        const resultOutput = document.getElementById('resultOutput');
+        let activeUnitType = 'length';
+        const API_URL = 'http://localhost:8080/api/v1/convert';
+
+        // --- Core Conversion Logic (Uses Fetch) ---
+
+        async function calculateConversion() {
+            const value = parseFloat(inputValue.value);
+            const unitFrom = unitFromSelect.value;
+            const unitTo = unitToSelect.value;
+
+            if (isNaN(value)) {
+                resultOutput.textContent = 'Invalid Input';
+                return;
+            }
+
+            if (value === 0 && activeUnitType !== 'temperature') {
+                resultOutput.textContent = '0';
+                return;
+            }
+
+            // Prepare payload for the Go backend
+            const payload = {
+                value: value,
+                unitType: activeUnitType,
+                unitFrom: unitFrom,
+                unitTo: unitTo,
+            };
+
+            // Display loading state
+            resultOutput.textContent = '...Calculating';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.ok) {
+                    // SUCCESS: HTTP Status 200-299
+                    const data = await response.json();
+
+                    // Display the result, formatting to 6 decimal places or using scientific notation
+                    const result = data.result;
+                    if (Math.abs(result) < 0.000001 && result !== 0) {
+                        resultOutput.textContent = result.toExponential(4);
+                    } else {
+                        // Use toFixed(6) to ensure consistent precision, then trim trailing zeros.
+                        resultOutput.textContent = parseFloat(result).toFixed(6).replace(/\.?0+$/, "");
+                    }
+                } else {
+                    // SERVER ERROR: HTTP Status 400-599
+                    const status = response.status;
+                    let errorMessage = `HTTP ${status}`;
+
+                    try {
+                        // Attempt to read the error message from the JSON body
+                        const errorData = await response.json();
+                        errorMessage += `: ${errorData.error || 'Unknown Error'}`;
+                    } catch (e) {
+                        // If the response body is not JSON or is empty
+                        errorMessage += `: ${response.statusText || 'Server Error'}`;
+                    }
+
+                    // Update the UI to show the error
+                    resultOutput.textContent = `🚨 ${errorMessage}`;
+                    console.error("Backend Error:", status, errorMessage);
+                }
+            } catch (error) {
+                // NETWORK ERROR: Catches connection issues (e.g., server not running)
+                resultOutput.textContent = '🔴 Error: Go server offline or network issue.';
+                console.error("Network Error:", error);
+            }
+        }
+
+        // --- UI and Initialization Functions ---
+
+        function updateUnitOptions() {
+            const units = conversionData[activeUnitType];
+            const optionsHtml = Object.keys(units).map(key =>
+                `<option value="${key}">${units[key].name} (${key.toUpperCase()})</option>`
+            ).join('');
+
+            unitFromSelect.innerHTML = optionsHtml;
+            unitToSelect.innerHTML = optionsHtml;
+
+            // Set default selection (e.g., first unit to second unit)
+            const keys = Object.keys(units);
+            if (keys.length >= 2) {
+                unitFromSelect.value = keys[0];
+                unitToSelect.value = keys[1];
+            } else if (keys.length === 1) {
+                unitFromSelect.value = keys[0];
+                unitToSelect.value = keys[0];
+            }
+        }
+
+        function setActiveTab(newUnitType) {
+            activeUnitType = newUnitType;
+
+            // Update button styles
+            tabButtons.forEach(button => {
+                if (button.dataset.unitType === newUnitType) {
+                    button.classList.add('border-indigo-500', 'text-indigo-600', 'bg-indigo-50');
+                    button.classList.remove('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700', 'hover:bg-indigo-50');
+                } else {
+                    button.classList.remove('border-indigo-500', 'text-indigo-600', 'bg-indigo-50');
+                    button.classList.add('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700');
+                }
+            });
+
+            updateUnitOptions();
+            calculateConversion(); // Recalculate with new units
+        }
+
+        // Event listener for tab clicks
+        tabButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                setActiveTab(e.currentTarget.dataset.unitType);
+            });
+        });
+
+        // Initialize the app on page load
+        window.onload = () => {
+            // Set initial active tab to 'length'
+            setActiveTab('length');
+        };
+    </script>
+</body>
+
+</html>
